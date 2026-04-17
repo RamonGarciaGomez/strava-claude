@@ -8,7 +8,7 @@ const path           = require('path');
 const { init, upsertUser, getUser, updatePreferences } = require('./db');
 const { exchangeCodeForTokens, getActivity, updateActivityDescription,
         createWebhookSubscription, listWebhookSubscriptions } = require('./strava');
-const { generateDescription } = require('./claude');
+const { generateDescription } = require('./ai');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
