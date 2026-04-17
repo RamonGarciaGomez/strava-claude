@@ -21,9 +21,14 @@ async function init() {
       profile_pic   TEXT,
       tone          TEXT DEFAULT 'playful',
       sport_focus   TEXT DEFAULT 'all',
+      enabled       INTEGER DEFAULT 1,
       created_at    INTEGER DEFAULT (strftime('%s', 'now'))
     )
   `);
+  // Add enabled column if upgrading from an older version of the DB
+  try {
+    await db.execute(`ALTER TABLE users ADD COLUMN enabled INTEGER DEFAULT 1`);
+  } catch (_) { /* column already exists, that's fine */ }
 }
 
 // ── User helpers ──────────────────────────────────────────────────────────────
@@ -70,4 +75,11 @@ async function updatePreferences(athleteId, tone, sportFocus) {
   });
 }
 
-module.exports = { init, upsertUser, getUser, updateTokens, updatePreferences };
+async function setEnabled(athleteId, enabled) {
+  await db.execute({
+    sql: 'UPDATE users SET enabled = ? WHERE athlete_id = ?',
+    args: [enabled ? 1 : 0, athleteId],
+  });
+}
+
+module.exports = { init, upsertUser, getUser, updateTokens, updatePreferences, setEnabled };

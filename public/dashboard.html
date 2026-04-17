@@ -19,28 +19,34 @@
   <main>
     <div class="dashboard-grid">
 
-      <!-- Status card -->
-      <section class="card status-card">
-        <div class="status-dot active"></div>
-        <div>
-          <strong>Active — auto-enrichment is on</strong>
-          <p>Every new activity you post to Strava will automatically get an AI description.</p>
+      <!-- ── Toggle card ─────────────────────────────────────────────── -->
+      <section class="card toggle-card">
+        <div class="toggle-left">
+          <div class="toggle-title">
+            <span id="status-dot" class="status-dot active"></span>
+            <strong id="status-label">Auto-enrichment is ON</strong>
+          </div>
+          <p id="status-desc">Every new activity you post will automatically get an AI description.</p>
         </div>
+        <label class="switch">
+          <input type="checkbox" id="enabled-toggle" checked />
+          <span class="slider"></span>
+        </label>
       </section>
 
-      <!-- Preferences card -->
+      <!-- ── Preferences card ───────────────────────────────────────── -->
       <section class="card prefs-card">
         <h2>Your preferences</h2>
 
         <div class="pref-group">
-          <label>Description tone</label>
+          <label class="pref-label">Description tone</label>
           <div class="radio-group" id="tone-group">
             <label class="radio-option">
               <input type="radio" name="tone" value="playful" />
               <div class="radio-card">
                 <span class="radio-icon">😄</span>
                 <strong>Playful</strong>
-                <small>Fun comparisons, jokes, relatable vibes</small>
+                <small>Fun comparisons & jokes</small>
               </div>
             </label>
             <label class="radio-option">
@@ -48,7 +54,7 @@
               <div class="radio-card">
                 <span class="radio-icon">🔥</span>
                 <strong>Motivational</strong>
-                <small>Hype, celebration, coach energy</small>
+                <small>Hype & coach energy</small>
               </div>
             </label>
             <label class="radio-option">
@@ -56,21 +62,36 @@
               <div class="radio-card">
                 <span class="radio-icon">📊</span>
                 <strong>Stats</strong>
-                <small>Clean data, numbers, analysis</small>
+                <small>Clean data & analysis</small>
               </div>
             </label>
           </div>
         </div>
 
-        <div class="pref-group">
-          <label>Sport focus</label>
+        <!-- Live preview of selected tone -->
+        <div class="preview-box" id="tone-preview">
+          <div class="preview-header">
+            <span class="preview-label">✨ Preview — this is what your description will look like</span>
+            <span id="preview-sport-toggle">
+              <button class="sport-pill active" data-sport="ride">🚴 Ride</button>
+              <button class="sport-pill" data-sport="run">🏃 Run</button>
+            </span>
+          </div>
+          <div class="preview-activity">
+            <div id="preview-activity-header" class="preview-activity-header"></div>
+            <p id="preview-text" class="preview-text"></p>
+          </div>
+        </div>
+
+        <div class="pref-group" style="margin-top: 24px;">
+          <label class="pref-label">Sport focus</label>
           <div class="radio-group" id="sport-group">
             <label class="radio-option">
               <input type="radio" name="sport_focus" value="all" />
               <div class="radio-card">
                 <span class="radio-icon">🏅</span>
                 <strong>All activities</strong>
-                <small>Enrich every sport</small>
+                <small>Every sport gets enriched</small>
               </div>
             </label>
             <label class="radio-option">
@@ -78,7 +99,7 @@
               <div class="radio-card">
                 <span class="radio-icon">🏃</span>
                 <strong>Runs only</strong>
-                <small>Only enrich running activities</small>
+                <small>Only running activities</small>
               </div>
             </label>
             <label class="radio-option">
@@ -86,7 +107,7 @@
               <div class="radio-card">
                 <span class="radio-icon">🚴</span>
                 <strong>Rides only</strong>
-                <small>Only enrich cycling activities</small>
+                <small>Only cycling activities</small>
               </div>
             </label>
           </div>
@@ -96,10 +117,10 @@
         <p id="save-status" class="save-status"></p>
       </section>
 
-      <!-- Manual enrich card -->
+      <!-- ── Manual enrich card ─────────────────────────────────────── -->
       <section class="card enrich-card">
         <h2>Test it on a past activity</h2>
-        <p>Paste a Strava activity URL (or just the activity ID) to enrich it right now.</p>
+        <p>Paste a Strava activity URL (or just the ID) to enrich it right now.</p>
 
         <div class="input-row">
           <input
@@ -115,7 +136,6 @@
           <pre id="enrich-text"></pre>
           <a id="strava-link" href="#" target="_blank" class="btn-sm">View on Strava →</a>
         </div>
-
         <p id="enrich-error" class="error-text hidden"></p>
         <div id="enrich-loading" class="loading hidden">✨ Generating description...</div>
       </section>
@@ -124,7 +144,69 @@
   </main>
 
   <script>
-    // ── Load user profile ────────────────────────────────────────────────────
+    // ── Preview content ────────────────────────────────────────────────────────
+    const PREVIEWS = {
+      playful: {
+        ride: {
+          header: '🚴  Morning Ride  ·  42.3 mi  ·  2h 18m  ·  1,840 ft gain',
+          text: `That's further than cycling from NYC to Philadelphia — except you did it before most people finished their coffee ☕. The 1,840 ft of climbing is basically 184 flights of stairs, but infinitely more fun and with way better views. Burned enough calories to fully justify a post-ride pastry situation. Possibly two. 🥐`,
+        },
+        run: {
+          header: '🏃  Sunday Long Run  ·  13.1 mi  ·  1h 52m  ·  8:34 /mile',
+          text: `Half marathon distance, fully executed. That's 13.1 miles — or roughly 23,000 steps, 69 laps of a standard track, or approximately the length of 232 football fields. All before lunch. The average pace of 8:34/mile is faster than a speeding shopping trolley, and considerably more graceful. 🛒`,
+        },
+      },
+      motivational: {
+        ride: {
+          header: '🚴  Morning Ride  ·  42.3 mi  ·  2h 18m  ·  1,840 ft gain',
+          text: `42 miles. Done. That's not a ride — that's a statement. Every one of those 1,840 feet of climbing was a choice you made when others stayed in bed. The legs were ready because YOU made them ready. This is what consistency looks like. Keep showing up. 🔥`,
+        },
+        run: {
+          header: '🏃  Sunday Long Run  ·  13.1 mi  ·  1h 52m  ·  8:34 /mile',
+          text: `Half marathon distance. Done. That's 13.1 miles of proof that you show up even when the couch is calling. Averaged 8:34/mile across the whole thing — consistent, controlled, and strong from start to finish. This is what your training has been building towards. You are exactly where you're supposed to be. 💪`,
+        },
+      },
+      stats: {
+        ride: {
+          header: '🚴  Morning Ride  ·  42.3 mi  ·  2h 18m  ·  1,840 ft gain',
+          text: `42.3 miles in 2h 18m — average speed 18.4 mph. Total elevation: 1,840 ft, equivalent to climbing a 184-storey building. Estimated caloric burn: ~1,250 kcal. Moving time efficiency: 94%. Distance ranks in the top 15% of your rides this year.`,
+        },
+        run: {
+          header: '🏃  Sunday Long Run  ·  13.1 mi  ·  1h 52m  ·  8:34 /mile',
+          text: `13.1 miles at 8:34/mile average pace. Elapsed time: 1:52:05. Cadence-adjusted effort puts this in zone 3. Half marathon equivalent time: 1:52:05 — a 23-second improvement on your previous half distance effort. Total distance covered this week: 31.4 miles.`,
+        },
+      },
+    };
+
+    let currentTone  = 'playful';
+    let currentSport = 'ride';
+
+    function updatePreview() {
+      const p = PREVIEWS[currentTone]?.[currentSport];
+      if (!p) return;
+      document.getElementById('preview-activity-header').textContent = p.header;
+      document.getElementById('preview-text').textContent = p.text;
+    }
+
+    // ── Sport pill toggle inside preview ───────────────────────────────────────
+    document.querySelectorAll('.sport-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sport-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSport = btn.dataset.sport;
+        updatePreview();
+      });
+    });
+
+    // Update preview when tone changes
+    document.querySelectorAll('input[name="tone"]').forEach(input => {
+      input.addEventListener('change', () => {
+        currentTone = input.value;
+        updatePreview();
+      });
+    });
+
+    // ── Load user profile ──────────────────────────────────────────────────────
     async function loadProfile() {
       const res = await fetch('/api/me');
       if (res.status === 401) { window.location = '/'; return; }
@@ -133,17 +215,53 @@
       document.getElementById('athlete-name').textContent =
         `${user.firstname} ${user.lastname}`;
 
-      // Set saved preferences
-      const toneInput = document.querySelector(`input[name="tone"][value="${user.tone || 'playful'}"]`);
+      // Restore saved tone
+      currentTone = user.tone || 'playful';
+      const toneInput = document.querySelector(`input[name="tone"][value="${currentTone}"]`);
       if (toneInput) toneInput.checked = true;
 
+      // Restore saved sport focus
       const sportInput = document.querySelector(`input[name="sport_focus"][value="${user.sport_focus || 'all'}"]`);
       if (sportInput) sportInput.checked = true;
+
+      // Restore toggle state
+      const enabled = user.enabled !== 0; // DB stores 1/0
+      setToggleUI(enabled);
+      document.getElementById('enabled-toggle').checked = enabled;
+
+      updatePreview();
     }
 
     loadProfile();
 
-    // ── Save preferences ─────────────────────────────────────────────────────
+    // ── Toggle switch ──────────────────────────────────────────────────────────
+    function setToggleUI(enabled) {
+      const dot   = document.getElementById('status-dot');
+      const label = document.getElementById('status-label');
+      const desc  = document.getElementById('status-desc');
+
+      if (enabled) {
+        dot.className   = 'status-dot active';
+        label.textContent = 'Auto-enrichment is ON';
+        desc.textContent  = 'Every new activity you post will automatically get an AI description.';
+      } else {
+        dot.className   = 'status-dot inactive';
+        label.textContent = 'Auto-enrichment is OFF';
+        desc.textContent  = 'Your activities will be posted as normal — no AI descriptions added.';
+      }
+    }
+
+    document.getElementById('enabled-toggle').addEventListener('change', async (e) => {
+      const enabled = e.target.checked;
+      setToggleUI(enabled);
+      await fetch('/api/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+    });
+
+    // ── Save preferences ───────────────────────────────────────────────────────
     document.getElementById('save-prefs').addEventListener('click', async () => {
       const tone       = document.querySelector('input[name="tone"]:checked')?.value;
       const sportFocus = document.querySelector('input[name="sport_focus"]:checked')?.value;
@@ -159,11 +277,7 @@
         body: JSON.stringify({ tone, sport_focus: sportFocus }),
       });
 
-      if (res.ok) {
-        showSaveStatus('Preferences saved! ✅', 'success');
-      } else {
-        showSaveStatus('Something went wrong.', 'error');
-      }
+      showSaveStatus(res.ok ? 'Saved! ✅' : 'Something went wrong.', res.ok ? 'success' : 'error');
     });
 
     function showSaveStatus(msg, type) {
@@ -173,11 +287,9 @@
       setTimeout(() => { el.textContent = ''; el.className = 'save-status'; }, 3000);
     }
 
-    // ── Manual enrich ────────────────────────────────────────────────────────
+    // ── Manual enrich ──────────────────────────────────────────────────────────
     document.getElementById('enrich-btn').addEventListener('click', async () => {
       const input = document.getElementById('activity-input').value.trim();
-
-      // Extract activity ID from URL or plain number
       const match = input.match(/(\d{6,})/);
       if (!match) {
         showEnrichError('Please enter a valid Strava activity URL or ID.');
@@ -185,26 +297,22 @@
       }
       const activityId = match[1];
 
-      hideEnrichResult();
-      hideEnrichError();
+      hideEnrichResult(); hideEnrichError();
       document.getElementById('enrich-loading').classList.remove('hidden');
       document.getElementById('enrich-btn').disabled = true;
 
       try {
-        const res = await fetch('/api/enrich', {
+        const res  = await fetch('/api/enrich', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ activityId }),
         });
         const data = await res.json();
-
         if (!res.ok) throw new Error(data.error || 'Something went wrong');
 
         document.getElementById('enrich-text').textContent = data.description;
-        document.getElementById('strava-link').href =
-          `https://www.strava.com/activities/${activityId}`;
+        document.getElementById('strava-link').href = `https://www.strava.com/activities/${activityId}`;
         document.getElementById('enrich-result').classList.remove('hidden');
-
       } catch (err) {
         showEnrichError(err.message);
       } finally {
@@ -218,12 +326,8 @@
       el.textContent = msg;
       el.classList.remove('hidden');
     }
-    function hideEnrichError() {
-      document.getElementById('enrich-error').classList.add('hidden');
-    }
-    function hideEnrichResult() {
-      document.getElementById('enrich-result').classList.add('hidden');
-    }
+    function hideEnrichError()  { document.getElementById('enrich-error').classList.add('hidden'); }
+    function hideEnrichResult() { document.getElementById('enrich-result').classList.add('hidden'); }
   </script>
 </body>
 </html>

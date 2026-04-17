@@ -5,7 +5,7 @@ require('dotenv').config();
 const express        = require('express');
 const session        = require('express-session');
 const path           = require('path');
-const { init, upsertUser, getUser, updatePreferences } = require('./db');
+const { init, upsertUser, getUser, updatePreferences, setEnabled } = require('./db');
 const { exchangeCodeForTokens, getActivity, updateActivityDescription,
         createWebhookSubscription, listWebhookSubscriptions } = require('./strava');
 const { generateDescription } = require('./ai');
@@ -117,6 +117,12 @@ app.post('/webhook', async (req, res) => {
       return;
     }
 
+    // Respect the user's on/off toggle
+    if (!user.enabled) {
+      console.log(`⏸️  Auto-enrichment is paused for athlete ${athleteId} — skipping`);
+      return;
+    }
+
     // Check sport filter preference
     const activityType = event.updates?.type?.toLowerCase() || '';
     if (user.sport_focus === 'run' && !activityType.includes('run')) return;
@@ -175,6 +181,14 @@ app.post('/api/preferences', requireAuth, async (req, res) => {
 
   await updatePreferences(req.session.athleteId, tone, sport_focus);
   res.json({ success: true });
+});
+
+// Toggle auto-enrichment on/off
+app.post('/api/toggle', requireAuth, async (req, res) => {
+  const { enabled } = req.body;
+  if (typeof enabled !== 'boolean') return res.status(400).json({ error: 'enabled must be a boolean' });
+  await setEnabled(req.session.athleteId, enabled);
+  res.json({ success: true, enabled });
 });
 
 // Manually enrich a past activity by ID

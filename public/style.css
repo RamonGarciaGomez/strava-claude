@@ -213,23 +213,126 @@ body.dashboard main { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
 
 .dashboard-grid { display: flex; flex-direction: column; gap: 24px; }
 
-/* Status card */
-.status-card {
+/* Toggle card */
+.toggle-card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   padding: 20px 24px;
 }
+.toggle-left { flex: 1; }
+.toggle-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.toggle-left p { font-size: 0.85rem; color: #666; margin-top: 4px; }
+
+/* Status dot */
 .status-dot {
-  width: 14px; height: 14px;
+  width: 12px; height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
 }
 .status-dot.active {
   background: #22c55e;
   box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
 }
-.status-card p { font-size: 0.85rem; color: #666; margin-top: 2px; }
+.status-dot.inactive {
+  background: #d1d5db;
+  box-shadow: none;
+}
+
+/* Sliding toggle switch */
+.switch { position: relative; display: inline-block; width: 52px; height: 28px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0;
+  background: #d1d5db;
+  border-radius: 28px;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.slider::before {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  left: 4px; bottom: 4px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.switch input:checked + .slider { background: var(--orange); }
+.switch input:checked + .slider::before { transform: translateX(24px); }
+
+/* Preview box */
+.preview-box {
+  background: #fafafa;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-top: 16px;
+  transition: border-color 0.2s;
+}
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.preview-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--orange);
+}
+.sport-pill {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  color: #666;
+}
+.sport-pill.active {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+}
+.preview-activity-header {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+.preview-text {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: #333;
+  font-style: italic;
+}
+
+/* pref-label (replaces old > label selector) */
+.pref-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin-bottom: 12px;
+}
 
 /* Preferences card */
 .prefs-card { padding: 24px; }
