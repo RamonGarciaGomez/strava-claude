@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — StravaAI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dashboard">
+
+  <header>
+    <div class="logo">⚡ StravaAI</div>
+    <div class="header-right">
+      <span id="athlete-name">Loading...</span>
+      <a href="/auth/logout" class="btn-sm">Log out</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="dashboard-grid">
+
+      <!-- Status card -->
+      <section class="card status-card">
+        <div class="status-dot active"></div>
+        <div>
+          <strong>Active — auto-enrichment is on</strong>
+          <p>Every new activity you post to Strava will automatically get an AI description.</p>
+        </div>
+      </section>
+
+      <!-- Preferences card -->
+      <section class="card prefs-card">
+        <h2>Your preferences</h2>
+
+        <div class="pref-group">
+          <label>Description tone</label>
+          <div class="radio-group" id="tone-group">
+            <label class="radio-option">
+              <input type="radio" name="tone" value="playful" />
+              <div class="radio-card">
+                <span class="radio-icon">😄</span>
+                <strong>Playful</strong>
+                <small>Fun comparisons, jokes, relatable vibes</small>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="tone" value="motivational" />
+              <div class="radio-card">
+                <span class="radio-icon">🔥</span>
+                <strong>Motivational</strong>
+                <small>Hype, celebration, coach energy</small>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="tone" value="stats" />
+              <div class="radio-card">
+                <span class="radio-icon">📊</span>
+                <strong>Stats</strong>
+                <small>Clean data, numbers, analysis</small>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="pref-group">
+          <label>Sport focus</label>
+          <div class="radio-group" id="sport-group">
+            <label class="radio-option">
+              <input type="radio" name="sport_focus" value="all" />
+              <div class="radio-card">
+                <span class="radio-icon">🏅</span>
+                <strong>All activities</strong>
+                <small>Enrich every sport</small>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="sport_focus" value="run" />
+              <div class="radio-card">
+                <span class="radio-icon">🏃</span>
+                <strong>Runs only</strong>
+                <small>Only enrich running activities</small>
+              </div>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="sport_focus" value="ride" />
+              <div class="radio-card">
+                <span class="radio-icon">🚴</span>
+                <strong>Rides only</strong>
+                <small>Only enrich cycling activities</small>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button id="save-prefs" class="btn-primary">Save preferences</button>
+        <p id="save-status" class="save-status"></p>
+      </section>
+
+      <!-- Manual enrich card -->
+      <section class="card enrich-card">
+        <h2>Test it on a past activity</h2>
+        <p>Paste a Strava activity URL (or just the activity ID) to enrich it right now.</p>
+
+        <div class="input-row">
+          <input
+            type="text"
+            id="activity-input"
+            placeholder="e.g. https://www.strava.com/activities/12345678"
+          />
+          <button id="enrich-btn" class="btn-primary">Enrich ✨</button>
+        </div>
+
+        <div id="enrich-result" class="enrich-result hidden">
+          <strong>New description:</strong>
+          <pre id="enrich-text"></pre>
+          <a id="strava-link" href="#" target="_blank" class="btn-sm">View on Strava →</a>
+        </div>
+
+        <p id="enrich-error" class="error-text hidden"></p>
+        <div id="enrich-loading" class="loading hidden">✨ Generating description...</div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // ── Load user profile ────────────────────────────────────────────────────
+    async function loadProfile() {
+      const res = await fetch('/api/me');
+      if (res.status === 401) { window.location = '/'; return; }
+      const user = await res.json();
+
+      document.getElementById('athlete-name').textContent =
+        `${user.firstname} ${user.lastname}`;
+
+      // Set saved preferences
+      const toneInput = document.querySelector(`input[name="tone"][value="${user.tone || 'playful'}"]`);
+      if (toneInput) toneInput.checked = true;
+
+      const sportInput = document.querySelector(`input[name="sport_focus"][value="${user.sport_focus || 'all'}"]`);
+      if (sportInput) sportInput.checked = true;
+    }
+
+    loadProfile();
+
+    // ── Save preferences ─────────────────────────────────────────────────────
+    document.getElementById('save-prefs').addEventListener('click', async () => {
+      const tone       = document.querySelector('input[name="tone"]:checked')?.value;
+      const sportFocus = document.querySelector('input[name="sport_focus"]:checked')?.value;
+
+      if (!tone || !sportFocus) {
+        showSaveStatus('Please select all preferences.', 'error');
+        return;
+      }
+
+      const res = await fetch('/api/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tone, sport_focus: sportFocus }),
+      });
+
+      if (res.ok) {
+        showSaveStatus('Preferences saved! ✅', 'success');
+      } else {
+        showSaveStatus('Something went wrong.', 'error');
+      }
+    });
+
+    function showSaveStatus(msg, type) {
+      const el = document.getElementById('save-status');
+      el.textContent = msg;
+      el.className = `save-status ${type}`;
+      setTimeout(() => { el.textContent = ''; el.className = 'save-status'; }, 3000);
+    }
+
+    // ── Manual enrich ────────────────────────────────────────────────────────
+    document.getElementById('enrich-btn').addEventListener('click', async () => {
+      const input = document.getElementById('activity-input').value.trim();
+
+      // Extract activity ID from URL or plain number
+      const match = input.match(/(\d{6,})/);
+      if (!match) {
+        showEnrichError('Please enter a valid Strava activity URL or ID.');
+        return;
+      }
+      const activityId = match[1];
+
+      hideEnrichResult();
+      hideEnrichError();
+      document.getElementById('enrich-loading').classList.remove('hidden');
+      document.getElementById('enrich-btn').disabled = true;
+
+      try {
+        const res = await fetch('/api/enrich', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ activityId }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+        document.getElementById('enrich-text').textContent = data.description;
+        document.getElementById('strava-link').href =
+          `https://www.strava.com/activities/${activityId}`;
+        document.getElementById('enrich-result').classList.remove('hidden');
+
+      } catch (err) {
+        showEnrichError(err.message);
+      } finally {
+        document.getElementById('enrich-loading').classList.add('hidden');
+        document.getElementById('enrich-btn').disabled = false;
+      }
+    });
+
+    function showEnrichError(msg) {
+      const el = document.getElementById('enrich-error');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+    function hideEnrichError() {
+      document.getElementById('enrich-error').classList.add('hidden');
+    }
+    function hideEnrichResult() {
+      document.getElementById('enrich-result').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strava Claude — AI-powered activity descriptions</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="landing">
+
+  <header>
+    <div class="logo">⚡ StravaAI</div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Your rides and runs,<br><span class="gradient-text">with a story attached.</span></h1>
+      <p class="subtitle">
+        Connect your Strava account and every activity you post will automatically get
+        a fun, AI-generated description full of cool stats, comparisons, and facts —
+        right in the Strava app on your phone.
+      </p>
+
+      <a href="/auth/strava" class="btn-strava">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/c/cb/Strava_Logo.svg" alt="Strava" class="strava-logo" />
+        Connect with Strava
+      </a>
+
+      <p class="disclaimer">We only read your activities and update descriptions. Nothing else.</p>
+    </section>
+
+    <section class="examples">
+      <h2>What does it look like?</h2>
+
+      <div class="example-cards">
+        <div class="card">
+          <div class="card-header">
+            <span class="sport-icon">🚴</span>
+            <div>
+              <strong>Morning Ride</strong>
+              <span class="meta">42.3 mi · 2h 18m · 1,840 ft gain</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="tone-badge playful">Playful</div>
+            <p>"That's further than cycling from London to Oxford — except you did it before most people
+            finished their coffee. 1,840 ft of climbing is basically 184 storeys of stairs, but way more fun
+            and with better views. Burned enough calories for a very justified post-ride pastry situation. 🥐"</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="sport-icon">🏃</span>
+            <div>
+              <strong>Sunday Long Run</strong>
+              <span class="meta">13.1 mi · 1h 52m · 8:34/mi</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="tone-badge motivational">Motivational</div>
+            <p>"Half marathon distance. Done. That's 13.1 miles of proof that you show up even when the
+            couch is calling. Averaged 8:34/mile across the whole thing — consistent, controlled, strong.
+            You are what training looks like. 🔥"</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="sport-icon">🚴</span>
+            <div>
+              <strong>Threshold Intervals</strong>
+              <span class="meta">28.7 mi · 1h 05m · 287W avg</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="tone-badge stats">Stats</div>
+            <p>"287W normalized power. 28.7 miles in 65 minutes puts average speed at 26.5 mph.
+            Top speed hit 41.2 mph — that's approaching residential speed limit territory.
+            Calories: 1,104. Suffer score: 94. Data doesn't lie: this was a hard one."</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="how">
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <p><strong>Connect Strava</strong><br>One-click OAuth. Takes 10 seconds.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <p><strong>Pick your vibe</strong><br>Playful, motivational, or stats-focused.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <p><strong>Go ride or run</strong><br>Post your activity as normal. We do the rest.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <p><strong>Open Strava</strong><br>Your description is already there. Magic. ✨</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built with ❤️ and Claude AI · Not affiliated with Strava</p>
+  </footer>
+
+  <script>
+    // Show error message if auth failed
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) {
+      const msg = document.createElement('div');
+      msg.className = 'error-banner';
+      msg.textContent = 'Authentication failed — please try again.';
+      document.body.prepend(msg);
+    }
+  </script>
+</body>
+</html>
