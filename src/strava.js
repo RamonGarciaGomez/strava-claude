@@ -44,6 +44,28 @@ async function getActivity(athleteId, activityId) {
   return res.data;
 }
 
+// Retries with backoff. Strava sometimes returns 404 right after creation, and
+// 500s or network errors happen occasionally. We retry all transient errors.
+async function getActivityWithRetry(athleteId, activityId, attempts = [1000, 4000, 10000]) {
+  for (let i = 0; i <= attempts.length; i++) {
+    try {
+      return await getActivity(athleteId, activityId);
+    } catch (err) {
+      const status = err.response?.status;
+      const isLast = i === attempts.length;
+      // Transient = 404 (not ready), 5xx (Strava issue), or no response (network)
+      const isTransient = status === 404 || (status >= 500 && status < 600) || !err.response;
+
+      if (isLast || !isTransient) throw err;
+
+      console.log(`⏳ Activity ${activityId} — transient error (${status || 'network'}), retrying in ${attempts[i]}ms...`);
+      await new Promise(r => setTimeout(r, attempts[i]));
+    }
+  }
+  // Unreachable — the loop either returns or throws
+  throw new Error('getActivityWithRetry exhausted retries');
+}
+
 async function updateActivityDescription(athleteId, activityId, description) {
   const token = await getFreshToken(athleteId);
   const res = await axios.put(
@@ -101,6 +123,7 @@ async function listWebhookSubscriptions() {
 
 module.exports = {
   getActivity,
+  getActivityWithRetry,
   updateActivityDescription,
   exchangeCodeForTokens,
   createWebhookSubscription,

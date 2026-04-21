@@ -133,7 +133,7 @@ async function generateOpenAI(systemText, userText) {
 async function generateClaude(systemText, userText) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const res = await client.messages.create({
-    model: 'claude-haiku-4-5',
+    model: 'claude-3-5-haiku-latest',
     max_tokens: 300,
     system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: userText }],

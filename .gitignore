@@ -3,3 +3,4 @@ node_modules/
 *.db
 *.sqlite
 .DS_Store
+sessions.db

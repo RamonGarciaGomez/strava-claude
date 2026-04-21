@@ -1,5 +1,4 @@
 // db.js — SQLite database via @libsql/client (works on all Node versions)
-// Stores user tokens and preferences in a local file: data.db
 
 const { createClient } = require('@libsql/client');
 const path = require('path');
@@ -8,7 +7,6 @@ const db = createClient({
   url: `file:${path.join(__dirname, '..', 'data.db')}`,
 });
 
-// Run once at startup to create tables if they don't exist
 async function init() {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS users (
@@ -25,13 +23,17 @@ async function init() {
       created_at    INTEGER DEFAULT (strftime('%s', 'now'))
     )
   `);
-  // Add enabled column if upgrading from an older version of the DB
+
+  // Migrate: add enabled column if upgrading from older DB (safe to run repeatedly)
   try {
     await db.execute(`ALTER TABLE users ADD COLUMN enabled INTEGER DEFAULT 1`);
-  } catch (_) { /* column already exists, that's fine */ }
+  } catch (err) {
+    // Only swallow "duplicate column" errors — rethrow anything else
+    if (!/duplicate column/i.test(err.message)) throw err;
+  }
 }
 
-// ── User helpers ──────────────────────────────────────────────────────────────
+// ── User helpers ───────────────────────────────────────────────────────────────
 
 async function upsertUser(athlete) {
   await db.execute({
@@ -82,4 +84,15 @@ async function setEnabled(athleteId, enabled) {
   });
 }
 
-module.exports = { init, upsertUser, getUser, updateTokens, updatePreferences, setEnabled };
+// Remove user record (used when Strava tells us they've deauthorized us)
+async function deleteUser(athleteId) {
+  await db.execute({
+    sql: 'DELETE FROM users WHERE athlete_id = ?',
+    args: [athleteId],
+  });
+}
+
+module.exports = {
+  init,
+  upsertUser, getUser, updateTokens, updatePreferences, setEnabled, deleteUser,
+};
